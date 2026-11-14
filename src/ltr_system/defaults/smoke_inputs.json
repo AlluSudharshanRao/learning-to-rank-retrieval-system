@@ -1,0 +1,8 @@
+{
+  "query": "How can I reduce GPU memory usage during training?",
+  "passages": [
+    {"id": 101, "text": "Gradient checkpointing reduces activation memory by recomputing activations during backpropagation."},
+    {"id": 102, "text": "KV caching avoids repeated computation during autoregressive inference and consumes memory."},
+    {"id": 103, "text": "Paris is the capital of France."}
+  ]
+}

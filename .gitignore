@@ -1,0 +1,49 @@
+# Local Python environments and caches
+envs/
+.venv/
+venv/
+cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Large, machine-specific, or regenerated runtime outputs
+data/
+artifacts/
+logs/
+*.log
+slurm-*.out
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.index
+*.faiss
+
+# Local credentials and editor state
+docs/interview_questions.md
+docs/implementation_journal.md
+Project_Proposal.docx
+.env
+.env.*
+!.env.example
+.ssh/
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*
+
+# Packaging and test outputs
+build/
+dist/
+htmlcov/
+.coverage
