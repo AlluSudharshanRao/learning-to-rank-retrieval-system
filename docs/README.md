@@ -5,8 +5,8 @@
 1. [Architecture](architecture.md) and [system design diagrams](design.md): implemented foundations and planned system.
 2. [HPC runbook](runbooks/hpc_setup.md): source transfer, environment, and execution.
 3. [Reproducibility](reproducibility.md): model identity and artifact contracts.
-4. [Evaluation](evaluation.md): baselines, metrics, and claim boundaries.
-5. [Validation](validation.md): checks actually executed and remaining work.
+4. [Data protocol](data.md), [evaluation](evaluation.md), and [retrieval metrics](retrieval_metrics.md): split roles, ingestion requirements, worked metric definitions, baselines, and claim boundaries.
+5. [Measured results](results.md) and [validation](validation.md): baseline measurements, executed checks, and remaining work.
 6. [Git workflow](runbooks/git_workflow.md) and [contribution guide](../CONTRIBUTING.md).
 7. [Initial architecture decision](decisions/0001_initial_design.md) and [source layout decision](decisions/0002_source_package.md).
 

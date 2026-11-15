@@ -11,6 +11,13 @@ requires-python = ">=3.11"
 dependencies = ["numpy==2.2.6"]
 
 [project.scripts]
+ltr-retrieve-bm25 = "ltr_system.lexical_search:main"
+ltr-build-lexical-index = "ltr_system.lexical_index:main"
+ltr-prepare-lexical-corpus = "ltr_system.lexical_corpus:main"
+ltr-evaluate = "ltr_system.evaluation:main"
+ltr-split-dataset = "ltr_system.data_split:main"
+ltr-prepare-dataset = "ltr_system.data_prepare:main"
+ltr-download-dataset = "ltr_system.data_download:main"
 ltr-download-encoder = "ltr_system.commands:download_main"
 ltr-check-gpu = "ltr_system.commands:gpu_main"
 ltr-check-encoder = "ltr_system.commands:encoder_main"

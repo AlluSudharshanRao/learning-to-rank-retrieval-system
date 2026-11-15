@@ -57,3 +57,73 @@ FAISS loaded its generic library after specialized AVX modules were unavailable.
 ## Design documentation
 
 Five Mermaid flowcharts were parsed successfully with Mermaid 11.12.1: the README overview and four detailed system-design views. Relative documentation links passed validation. The diagrams distinguish implemented checks from planned pipelines; they do not add runtime functionality or benchmark results.
+
+## Dataset source downloader
+
+Local suite: 23 tests passed, including four new downloader tests. Synthetic archives cover complete transfers, member inventory and hashing, incomplete transfers preserving an existing file, unsafe/duplicate/missing members, corrupted gzip trailers, and temporary-file cleanup. Ruff lint and formatting checks passed. The official archive has not yet been downloaded or validated on HPC.
+
+## Record preparation
+
+Official download completed on HPC with exit code 0:0 in 00:09:34; archive inventory and gzip checks passed. Local suite now passes 28 tests. New parser tests cover numeric ID zero, malformed fields, duplicate IDs and judgments, invalid UTF-8, invalid labels, missing query/passage references, existing-output refusal, and extraction/publication with failed-run cleanup. The end-to-end fixture overrides only the official corpus count to two records. Ruff checks passed. Official record preparation remains pending.
+
+## Duplicate judgment policy
+
+The first official preparation run stopped on an identical repeated training judgment. Parser version 2 accepts identical repeats with explicit counts and rejects conflicting labels. All 29 local tests passed, including source preservation and both judgment roles; Ruff passed. Corrected HPC preparation is pending. No full official integrity report is available yet.
+
+## Official record validation completed
+
+Parser version 2 completed on HPC with exit code 0:0 in 00:01:37. The integrity report records 8,841,823 passages, 808,731 training queries, and 6,980 development-small queries. Training qrels contain 532,761 rows, 532,751 unique judgments, and 10 identical duplicate rows. Development-small contains 7,437 unique judgments without duplicates. Duplicate source IDs, conflicting judgments, missing judgment references, and train/final query ID overlap are zero. Normalized-query text overlap and query splits remain pending. Extracted source TSVs retain their original bytes.
+
+## Query splitting
+
+The local suite passes 34 tests; Ruff passes. Five split tests cover normalization and group selection, stable expansion and source-order independence, insufficient data, end-to-end deduplicated output without a final-judgment input, and rejection of changed source data. Official split execution and its counts remain pending.
+
+## Official query split completed
+
+Split version 1 completed on HPC with exit code 0:0 in 00:00:06. The manifest reports 50,000 training queries with 52,867 unique judgments, 2,000 validation queries with 2,113 unique judgments, and 6,980 final queries. There are 502,865 eligible normalized query groups; 305,792 source training queries lack judgments and are excluded from supervised selection. No eligible judged query matched the final query IDs or normalized text. Selected splits have zero ID and normalized-text overlap. Final judgments were not read by splitting. The run used Unicode database 14.0.0. Supplementary TREC overlap remains unchecked; this is still a pre-training gate for the supplementary held-out protocol. These are data preparation results, not retrieval quality measurements.
+
+## Binary metric implementation
+
+All 42 local tests passed, including eight metric tests for hand-calculated values, cutoff and empty-ranking behavior, duplicate-ID rejection, input validation, and fixed-query aggregation. Ruff passed. No real retrieval rankings have been scored, and graded TREC/reference-evaluator verification is pending.
+
+## File-based evaluator
+
+All 46 local tests passed, including four adapter tests for CLI parity, rank validation, judgment-label handling, and failed-run report suppression. Ruff passed. No real retrieval result file has been scored; HPC execution and independent reference parity remain pending.
+
+## Evaluator HPC verification and BM25 runtime
+
+All 12 metric/adapter tests passed under the HPC retrieval environment in 1.286 seconds, including isolated CLI integration. This is synthetic correctness evidence, not reference-tool parity or model quality.
+
+A separate scratch BM25 environment has Python 3.12.16, OpenJDK 21.0.10-internal, Pyserini 2.4.0, NumPy 2.2.6, and PyTorch 2.9.1+cpu. Pip reported no broken requirements. On a CPU allocation, NumPy imported in 1.177 seconds; full LuceneSearcher/Java integration passed in 74.575 seconds. These single-run startup observations are not retrieval latency benchmarks. Index construction and search remain pending.
+
+## BM25 synthetic check implementation
+
+Added scripts/bm25_smoke_test.py and src/ltr_system/bm25_smoke.py. The check uses the documented JsonCollection CLI to build a temporary three-document index, sets k1=0.9 and b=0.4, verifies count and external IDs for unique terms, verifies an absent-term query, and reopens the index to compare results. Saves artifacts/smoke/bm25_check.json only on success. Actual Pyserini indexing/search execution remains pending on HPC; local checks cover import-safe CLI help and existing regressions, not Lucene integration.
+
+## BM25 lifecycle correction
+
+HPC job 23179958 passed synthetic index/search/reopen assertions and wrote a report, then failed during temporary-index deletion (exit 1:0). The local correction retains per-run smoke artifacts, closes searchers, and writes job-associated check.json inside each run directory. All 46 local tests and Ruff passed; corrected HPC execution is pending. Earlier references to temporary-index cleanup and the shared bm25_check.json report describe the original version and are superseded by this correction.
+
+## BM25 smoke completed and sharding implementation
+
+Corrected smoke job 23180928 completed in 00:01:08 with exit 0:0. Logs confirm three indexed documents, zero indexing errors, and successful search/reopen checks. The report is retained with its per-run index. Full-corpus quality is unmeasured.
+
+Added streaming TSV-to-JSONL conversion with verified input identity, preserved IDs/text, deterministic shards, per-shard hashes and staged publication. All 50 local tests and Ruff passed. Official-data conversion remains pending.
+
+## Full lexical indexing implementation
+
+Corpus conversion verified on HPC: 8,841,823 records, 89 shards, last shard 41,823. Added index builder with pre/post source verification, separate index/verification processes, staged publication and retained failure logs. All 53 local tests and Ruff passed; full Lucene build and runtime resource usage remain unverified. Local tests exercise input validation and CLI loading, not full Java indexing.
+
+## Full index completed; validation runner implemented
+
+HPC index job 23187037 completed in 00:02:36 with exit 0:0, verifying 8,841,823 documents. Index subprocess duration including startup: 88.170653 seconds. Four threads, 16 GB heap, English/Porter analysis, stopword removal; no raw text, positions or document vectors. Source hash matches the validated collection.
+
+All 56 local tests and Ruff passed after adding validation retrieval/scoring. Three new tests use a simulated search backend for serialization/evaluator integration, empty queries, invalid scores/IDs, duplicate results and tie preservation. They do not establish real Lucene relevance quality. Official retrieval remains pending.
+
+## First full-corpus validation retrieval completed
+
+Job23188133 completed in00:02:02, exit0:0. All2000 validation queries have results. Measured MRR@10=0.161909, binary NDCG@10=0.205845; Recall@20/50/100/1000=0.436250/0.560583/0.643917/0.849333. See results.md for protocol and limitations. Values are rounded from user-provided HPC evaluator output, not independently retrieved artifact copies.
+
+## E5 encoding pilot implementation
+
+Added bounded GPU encoding pilot using the pinned model and verified corpus prefix. All 58 local tests and Ruff passed. New tests cover prefix selection/ID handling; they do not run CUDA or establish encoding performance. Real GPU pilot timing, memory usage and vectors remain pending.

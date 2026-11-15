@@ -26,6 +26,7 @@ slurm-*.out
 # Local credentials and editor state
 docs/interview_questions.md
 docs/implementation_journal.md
+docs/troubleshooting.md
 Project_Proposal.docx
 .env
 .env.*

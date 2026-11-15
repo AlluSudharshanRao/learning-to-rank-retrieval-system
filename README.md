@@ -2,7 +2,7 @@
 
 A reproducible passage retrieval and ranking project studying model quality, indexing, and serving efficiency on Slurm-managed GPUs.
 
-**Status:** encoder and exact-search validation complete on NYU HPC. Dataset ingestion, model training, approximate retrieval, reranking, and serving are planned. See the [validation record](docs/validation.md) for test environments and results.
+**Status:** data ingestion, query splitting, full-corpus BM25 indexing/retrieval, and binary evaluation are verified on NYU HPC. E5 encoding and exact FAISS smoke checks pass; a larger encoding pilot is implemented but has not run. Dense corpus retrieval, training, ANN, reranking, and serving remain planned. See [measured results](docs/results.md) and the [validation record](docs/validation.md).
 
 ## Architecture overview
 
@@ -30,16 +30,20 @@ See [System design](docs/design.md) for the planned retrieval/reranking pipeline
 | Offline GPU encoder with masked mean pooling | Implemented and verified on L40S |
 | Exact CPU FAISS and stable passage IDs | Implemented; score, ID, and reload checks passed |
 | Runtime validation and atomic JSON metadata | Implemented |
-| Unit tests, linting, CPU CI configuration | Configured; local checks passed |
-| Dataset pipeline, BM25, ANN, model training, reranker, serving | Planned |
+| Unit tests, linting, CPU CI configuration | 58 local tests pass; initial GitHub CI passed; new changes await CI |
+| MS MARCO ingestion and query splits | Verified; 50,000 training / 2,000 validation queries |
+| Full-corpus BM25 | 8,841,823 passages indexed; validation baseline measured |
+| Binary metrics and file evaluator | Implemented; 12 evaluator tests also passed on HPC |
+| Dense encoding pilot | Implemented and locally checked; GPU execution pending |
+| ANN, model training, reranker, serving | Planned |
 
 ## Repository layout
 
 | Path | Responsibility |
 | --- | --- |
-| `src/ltr_system/` | Import-safe configuration, commands, pooling, and vector validation |
+| `src/ltr_system/` | Data preparation, lexical retrieval, evaluation, encoding, and integrity checks |
 | `src/ltr_system/defaults/` | Versioned model identity and illustrative input fixture |
-| `scripts/` | Four thin CLI wrappers supporting Python isolated mode |
+| `scripts/` | Thin CLI wrappers supporting Python isolated mode |
 | `tests/` | CPU correctness, error cases, and CLI checks |
 | `slurm/` | Short GPU smoke-test submission template |
 | `requirements/` | Dependency inputs, constraints, and directly observed versions |
