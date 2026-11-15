@@ -127,3 +127,31 @@ Job23188133 completed in00:02:02, exit0:0. All2000 validation queries have resul
 ## E5 encoding pilot implementation
 
 Added bounded GPU encoding pilot using the pinned model and verified corpus prefix. All 58 local tests and Ruff passed. New tests cover prefix selection/ID handling; they do not run CUDA or establish encoding performance. Real GPU pilot timing, memory usage and vectors remain pending.
+
+## Encoding pilot completed on HPC
+
+Job23190504 passed on L40S, exit0:0 in00:01:27. The verified-prefix10000-passage FP32 batch64 pilot records4.754380seconds timed encoding and2103.323537passages/sec; peak allocated463351808bytes and reserved788529152bytes. Shape/finite/unit-norm checks passed. Full corpus encoding, representative workload profiling and dense retrieval quality remain pending. GitHub push/CI for commit10c5059 was reported successful before this pilot.
+
+## Passage-length profiler implementation
+
+Added seeded corpus-row sampling and CPU token-length profiling with saved sample/IDs and nearest-rank statistics. All60 local tests and Ruff passed. Two new tests cover selection repeatability, coverage without replacement, input-count failures and the exact512token truncation boundary. Actual pinned-tokenizer profiling remains pending on HPC.
+
+## Saved-sample encoding pilot extension
+
+Official sampled length profile passed (job23192851):10000rows, mean79.3199tokens, maximum289, zero above512 in sample. Extended GPU pilot to verified saved samples and repeated timing. All62 local tests and Ruff passed, including two new sample identity tests. GPU comparisons of batch64/256 remain pending; no speedup claim yet.
+
+## Sample GPU comparison and vector agreement completed
+
+Job23193970 passed on L40S. Three repetitions each: batch64 median5.904316s/1693.676367passagessec, batch256 median6.686149s/1495.629267passagessec. Same10000sample IDs and10000x384 vectors verified; maxcomponentdifference3.2782554626464844e-7; minimum pairedcosine0.9999998807907104; allclose atol1e-5/rtol1e-4 passed. Initial full-encoding choice is batch64 FP32; fullcorpus encoding and dense relevance remain pending.
+
+## Resumable dense encoding implementation
+
+Added shardwise FP32 encoding, explicit vector-map closure, staged publication, checksummed ID/vector artifacts, strict configuration matching and verified completed-shard reuse. All66 local tests and Ruff passed. The failure-injection test caught a Windows traceback retaining a memory-mapped file; explicit unmapping now permits cleanup. No full corpus shard has yet been encoded by this command. Next gate: run shard0, then rerun shard0 and confirm verified skip.
+
+## First dense shard and restart verified on HPC
+
+Job23248207 completed in00:02:02, exit0:0, publishing100,000 passage vectors at384dimensions FP32 on L40S, batch64. Manifest reports50.898146seconds shard processing including parsing, tokenization, encoding, writes/checks, source rehash and IDs. Job23248932 completed in00:01:15, exit0:0; its log explicitly confirms verified completed shard and skipping encoder for part-00000. Model loading still occurs before skip checks. Remaining88shards and aggregate coverage validation remain pending.
+
+## Full-range dense encoding job completed
+
+Job23249408 completed with exit0:0 in01:17:03. Logs confirm publication through part-00088 with41,823 records and completion of range[0,89). This job reused the already encoded first shard; its elapsed time is not a clean from-scratch encoding benchmark. An independent all-shard coverage audit is pending. Added CPU audit and three synthetic tests; all69 local tests and Ruff passed. Dense retrieval quality remains unmeasured.

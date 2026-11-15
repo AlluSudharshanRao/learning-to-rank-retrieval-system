@@ -128,3 +128,37 @@ scripts/encoding_pilot.py encodes a verified prefix of the first JSONL shard, in
 Artifacts under artifacts/encoding-pilots/e5-n10000-b64 contain vectors.npy, ordered string passage IDs and a hashed manifest linking model/source settings and GPU/job. Existing output is refused. Prefix selection is deterministic but is not a representative randomized workload or relevance benchmark. Two local source-selection tests cover prefix/ID preservation and duplicate/insufficient-ID failures. GPU encoding execution remains pending.
 
 The full 8,841,823 x 384 FP32 embedding matrix alone requires 13,581,040,128 bytes, excluding IDs, ANN structures and temporary copies. Full encoding needs resumable shards and a measured compute budget; this bounded pilot does not implement the final corpus encoding pipeline. Truncation frequency and sequence-length distributions remain to be characterized before extrapolating throughput.
+
+## Full-corpus sampled token-length profile
+
+scripts/profile_passage_lengths.py selects 10,000 distinct corpus-row positions uniformly without replacement using seed2026, scans verified JSONL shards, and retains sampled records in corpus order. It tokenizes with the pinned offline E5 tokenizer on CPU, adding the passage prefix and special tokens, with padding/truncation disabled. It reports minimum/mean/maximum, nearest-rank p50/p90/p95/p99, and the number/fraction strictly above512tokens. Equality to512 does not require truncation.
+
+Artifacts/profiles/e5-n10000-seed2026 contains sample.jsonl for reuse in a GPU pilot, aligned token_lengths.json and manifest.json. The manifest records sampling/Python/model identity, hashes and length statistics. This estimates the sampled passage-length distribution, not retrieval quality or full corpus truncation counts. Uniform sampling reduces prefix bias but still has sampling error. It does not measure padding inflation; that also depends on batch ordering. Keep source shards immutable during profiling. No model forward pass, GPU or training is needed. Official profiling is pending.
+
+## Saved-sample GPU pilot
+
+encoding_pilot.py now accepts --sample-profile (directory containing manifest.json and sample.jsonl) and --repeats. It verifies sample checksum, full sample count and pinned tokenizer identity. Default prefix mode remains available. Pilot version2 output names include sample-hash prefix, passage count, batch size and repetition count; prior prefix artifacts remain unchanged.
+
+For a controlled first comparison, use the saved 10,000-passage sample with batch sizes64 and256 and three repetitions each, sequentially in one GPU allocation. Keep FP32, model revision,512token cap and source order fixed. Record all repetition durations and median; passages_per_second divides sample size by median duration. Warmup uses two batches, and allocator peaks span the measured repetitions. Persisted vectors come from the final repetition. No cross-batch vector agreement is asserted automatically; compare matching IDs, norms and vector differences before deciding that configurations are interchangeable. Timings do not include artifact saving and do not establish serving latency or full corpus throughput. Run order, padding distribution and GPU load can affect these initial measurements.
+
+Local tests verify saved sample mapping and detect modified content, mismatched model identity and partial-sample requests. All62 local tests and Ruff passed; actual sample GPU comparisons remain pending.
+
+## Resumable dense corpus encoding
+
+scripts/encode_corpus.py processes a half-open shard range: --start-shard0 --stop-shard1 encodes only the first100,000-passage shard. Defaults are batch64, FP32, pinned offline E5, masked mean pooling, normalized384-dimensional output and max512tokens. Output is artifacts/embeddings/e5-small-v2-fp32/part-00000/ containing vectors.npy, ordered passage_ids.json and manifest.json. No query encoding or retrieval is performed here.
+
+Each input is verified against its shard identity. Output vectors are written batchwise to a NumPy memory-mapped file, checked for shape, FP32 dtype, finite values and unit norms, then flushed and explicitly unmapped before publication. The source is rehashed to detect changes. ID uniqueness and record count are checked. A staged directory is renamed into place only after all files and their checksums are complete. Normal exceptions remove the incomplete stage; forceful termination can leave an unpublished .encoding-* directory.
+
+Reusing a completed shard requires matching model/corpus/encoding identity and verified file sizes, checksums, ID uniqueness/count, vector shape and unit norms. The encoder callback is skipped only after verification succeeds. Incompatible or corrupted output fails explicitly rather than silently overwriting. The configuration includes GPU model and library versions, so a different GPU class or environment requires an explicit compatibility decision, not automatic mixing.
+
+A single-writer lock protects the embedding directory. A hard-killed process can leave .writer.lock; inspect its host/job/process before removing it. Resume occurs at shard boundaries, not within the interrupted shard. Successful publication does not provide storage backup or guarantee survival of a filesystem/power failure. Full-corpus completion will require a separate all-shard coverage check before indexing.
+
+Four synthetic callback tests cover aligned IDs/output, completed-shard skip, interrupted shard cleanup and retry, corrupted/incompatible completed output, and writer exclusion. All66 local tests and Ruff passed. The tests exercise restart behavior without a GPU; first-shard CUDA execution and HPC restart verification remain pending.
+
+## Complete dense embedding audit
+
+scripts/verify_corpus_embeddings.py audits all expected shards in a CPU Slurm allocation. It checks the published shard set, source hashes, common encoding configuration, artifact sizes/checksums, FP32 shape, finite vectors and unit norms, plus ordered saved passage IDs against every source JSONL row. Global source-ID uniqueness is inherited from the validated corpus and exact row alignment, rather than an additional in-memory set over all8.8million IDs. It uses the embedding writer lock to exclude concurrent project encoding.
+
+Successful audit writes coverage.json containing total records, shard count, dimensions, vector file bytes, source/config hashes and per-shard manifest hashes. This is a snapshot audit; later modifications require revalidation. Its existence alone is not proof that a new audit succeeded. Failed audits do not publish a replacement. Source and artifact files must remain immutable during audit. It performs no model inference, retrieval or semantic validation of vector content.
+
+Three synthetic tests check complete/repeatable audits, missing-shard failure and reordered IDs despite updated checksums. All69 local tests and Ruff passed. The full GPU encoding job has completed; the independent CPU coverage audit remains pending before dense indexing.

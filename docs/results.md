@@ -27,3 +27,42 @@ The complete Slurm retrieval/scoring job took 00:02:02 and exited 0:0, with two 
 Artifacts reside under `artifacts/runs/bm25-validation-default/`: `ranking.tsv`, `evaluation.json`, and `manifest.json`. The run manifest links index and split identities and output hashes. Runtime artifacts remain excluded from Git. Final evaluation queries and judgments were not read. Supplementary TREC overlap exclusion, graded evaluation, confidence intervals, and reference-tool comparison remain pending.
 
 Next comparisons must use the same corpus, validation query membership, judgment policy, and evaluator. Pretrained dense retrieval will provide a second baseline before training or reranking improvements are claimed.
+
+## E5 passage encoding pilot
+
+Pinned intfloat/e5-small-v2 revision ffb93f3bd4047442299a41ebb6fa998a38507c52 encoded the first 10,000 passages of the first verified JSONL shard on NVIDIA L40S. FP32 without autocast, batch size64, maximum512tokens, passage prefix, masked mean pooling and L2 normalization; two warmup batches excluded.
+
+| Measurement | Observed value |
+| --- | ---: |
+| Timed encoding | 4.754380 seconds |
+| Encoding throughput | 2,103.323537 passages/second |
+| Peak PyTorch allocated GPU memory | 463,351,808 bytes |
+| Peak PyTorch reserved GPU memory | 788,529,152 bytes |
+| Output shape | 10,000 x 384 |
+| Complete Slurm job | 00:01:27, exit 0:0 |
+
+Timing includes tokenization, transfers, forward inference, pooling and CPU vector collection; excludes model loading, warmup and artifact saving. PyTorch peaks do not measure total GPU device consumption or utilization. Vector shape, finite values and unit norms were checked before publishing vectors.npy, passage_ids.json and manifest.json under artifacts/encoding-pilots/e5-n10000-b64/. Values are transcribed from the provided manifest; no independent artifact copy was inspected locally.
+
+This single corpus-prefix run is not a representative throughput benchmark or retrieval-quality measurement. A constant-throughput extrapolation suggests roughly70minutes of encoding for the full corpus, but ignores passage-length variation, sharding/checkpoint I/O and allocation variability. Characterize sequence lengths and representative shards before selecting the full encoding budget. No comparative speedup is claimed.
+
+## Corpus-wide sampled token lengths
+
+A uniform sample without replacement of10,000 corpus rows, seed2026, was profiled using the pinned E5 tokenizer without truncation, including passage prefix and special tokens. Observed mean79.3199, median70, p90127, p95142, p99176, minimum14, maximum289tokens. Zero sampled passages exceeded512tokens; this is not proof that the full corpus has no longer passages. CPU profiling completed in00:00:52 with exit0:0. Saved sample SHA-256:63c22058ed2992c964b713438057a470b2690d13263790e5e0babc0fc397cdc2. Sample encoding/batch-size comparisons remain pending.
+
+## Sampled E5 batch-size comparison
+
+Job23193970 completed with exit0:0 in00:02:20. Both configurations ran sequentially in the same L40S allocation on the identical saved10,000-passage corpus-wide sample. Pinned E5, FP32,512token cap, masked mean pooling and normalization were held fixed. Each process performed two warmup batches and three measured repetitions.
+
+| Measurement | Batch64 | Batch256 |
+| --- | ---: | ---: |
+| Repetition seconds | 5.900945,5.929125,5.904316 | 6.642215,6.686149,6.695123 |
+| Median seconds | 5.904316 | 6.686149 |
+| Passages/second | 1693.676367 | 1495.629267 |
+| Peak allocated MiB | 439.943848 | 1351.600586 |
+| Peak reserved MiB | 1822 | 5352 |
+
+Batch64 provided approximately13.2% higher throughput in this comparison. These are sequential offline encoding observations, not a controlled serving benchmark or a global batch-size optimum. Increased padding or memory work may contribute to batch256's result, but no causal profiling was performed. Fixed run order and only three repetitions limit generalization.
+
+Post-run comparison verified matching ordered passage IDs, finite vectors and shape10000x384. Maximum absolute component difference was3.2782554626464844e-7; minimum paired cosine was0.9999998807907104. NumPy allclose passed with atol1e-5 and rtol1e-4. Numerical agreement does not prove identical downstream nearest-neighbor rankings, especially for ties.
+
+Decision: use batch64 FP32 as the initial L40S full-corpus configuration. At the sampled throughput, a constant-rate extrapolation is roughly87minutes of encoding for8,841,823passages, excluding checkpoint/I/O/startup costs and workload variability. Full encoding requires verified resumable shards and remains pending.
