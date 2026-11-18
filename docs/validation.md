@@ -155,3 +155,68 @@ Job23248207 completed in00:02:02, exit0:0, publishing100,000 passage vectors at3
 ## Full-range dense encoding job completed
 
 Job23249408 completed with exit0:0 in01:17:03. Logs confirm publication through part-00088 with41,823 records and completion of range[0,89). This job reused the already encoded first shard; its elapsed time is not a clean from-scratch encoding benchmark. An independent all-shard coverage audit is pending. Added CPU audit and three synthetic tests; all69 local tests and Ruff passed. Dense retrieval quality remains unmeasured.
+
+## Exact dense index implementation
+
+Added exact FAISS index builder and isolated CLI. All72 local tests and Ruff passed, including canonical ID conversion, real FAISS exact-ranking/save/reload checks on synthetic data, and rejection of modified embedding artifacts without publication. Full-corpus builder execution remains pending. Embedding coverage on HPC previously passed with8,841,823rows,89shards,384dimensions and ordered source-ID alignment; vector files total13,581,051,520bytes including headers.
+
+## Exact dense index completed; query encoder implemented
+
+Index job23282570 completed with exit0:0 in00:01:23. Manifest confirms8,841,823vectors at384dimensions, FAISS1.15.1 IDMap2FlatIP,89 reconstruction checks after reload, and13,651,774,802byte saved index. Build/verification scope took70.122530seconds. This verifies index structure, not dense relevance quality.
+
+Added validation-only E5 query encoder. All74 local tests and Ruff passed, including two input tests for ID order/query prefixes, changed input and duplicate query rejection. GPU query encoding and full-corpus dense validation retrieval remain pending.
+
+## Validation query encoding completed
+
+HPC job 23302557 completed successfully in 68 seconds. The query manifest
+confirms 2,000 vectors, 384 dimensions, FP32, masked mean pooling and L2
+normalization with the pinned E5 checkpoint. The validation query checksum
+matches the frozen split. No final queries or judgments were read.
+
+## Exact dense retrieval implementation
+
+Added a CPU exact search runner with checksummed input validation,
+configuration and ordered-query alignment, staged output publication and
+the existing binary relevance evaluator. Synthetic tests exercise full
+search-to-evaluation execution, batch-size agreement, checksum rejection,
+reordered IDs and invalid vector norms. Full-corpus execution and quality
+comparison with BM25 are pending.
+
+## Exact dense retrieval completed on HPC
+
+Job 23620628 completed with exit 0:0 in 14 minutes 29 seconds. The reported
+binary evaluation covers all 2,000 validation queries with zero missing
+or empty rankings. MRR@10 is 0.317547, NDCG@10 is 0.381328, and Recall at
+20/50/100/1000 is 0.707167/0.828917/0.879083/0.968500. These exceed the
+current BM25 aggregate values on the same validation population. Full run
+manifest inspection remains pending; no serving latency or statistical
+significance claim is made.
+
+## Exact search timing and reference evaluation gate
+
+The completed exact validation run manifest reports 2,000 queries,
+2,000,000 retrieved candidates, batch size 32 and four CPU threads with
+FAISS 1.15.1. Search calls took 825.801958 seconds; the retrieval loop took
+826.391006 seconds. Approximate search-only offline throughput was
+2.42 queries/second. This excludes encoding, index loading, checksums and
+scoring, and does not establish serving latency. The final query set was
+not read. Saved evaluation SHA-256:
+`2efcf0f24bf87ff5a4f5e491263b9ffb6299fde2c785b9ab12e5ca63895b4f48`.
+
+Installed pytrec-eval-terrier 0.5.11 into a separate project tools directory
+on HPC. Import and rank-2/rank-11 metric sanity checks passed. Added a
+saved-run comparison command with independent TSV parsing and per-query
+as well as aggregate checks. Full reference comparison is pending HPC.
+
+## Independent evaluator agreement confirmed
+
+HPC job 23625746 completed with exit 0:0 in six seconds. Both
+`bm25-validation-default` and `e5-exact-validation-default` passed the
+comparison against pytrec-eval-terrier 0.5.11 on the same 2,000 validation
+queries. Maximum per-query absolute error was 0.0 for RR@10, binary
+NDCG@10, and Recall@20/50/100/1000 in both runs: 24,000 per-query metric
+comparisons in total. Macro aggregates also passed the 1e-12 absolute
+tolerance. Query and judgment checksums matched across runs; final queries
+were not read. This confirms agreement for metric computation on these
+saved rankings. It does not establish statistical significance, retrieval
+implementation correctness, or generalization.

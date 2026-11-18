@@ -162,3 +162,43 @@ scripts/verify_corpus_embeddings.py audits all expected shards in a CPU Slurm al
 Successful audit writes coverage.json containing total records, shard count, dimensions, vector file bytes, source/config hashes and per-shard manifest hashes. This is a snapshot audit; later modifications require revalidation. Its existence alone is not proof that a new audit succeeded. Failed audits do not publish a replacement. Source and artifact files must remain immutable during audit. It performs no model inference, retrieval or semantic validation of vector content.
 
 Three synthetic tests check complete/repeatable audits, missing-shard failure and reordered IDs despite updated checksums. All69 local tests and Ruff passed. The full GPU encoding job has completed; the independent CPU coverage audit remains pending before dense indexing.
+
+## Exact dense index
+
+scripts/build_dense_index.py builds artifacts/indexes/e5-flat-ip-v1/exact.faiss as IndexIDMap2(IndexFlatIP). It requires coverage.json, checks configuration and shard-manifest identities, rehashes vector/ID files, verifies FP32 shape and norms, and adds rows in10,000-vector chunks. Original numeric IDs must round-trip canonically to nonnegative int64; leading-zero IDs and overflow fail rather than silently changing identity. Global uniqueness is inherited from the audited source-row mapping.
+
+The complete FAISS matrix resides in RAM despite chunked input. Initial Slurm budget: four CPU cores and64GB RAM to accommodate the roughly13.6GB matrix plus growth/ID-map/reload overhead. This is an initial allocation, not measured index-build usage. The original in-memory index is released before reloading the saved file. Checks verify count/dimension, reconstruct one source vector per shard by external ID, and compare returned search scores with direct dot products for a sampled stored query. The small local test also compares an entire exact ranking with hand-calculated scores.
+
+Embedding and build locks require one writer; source artifacts must remain immutable. Build output is staged and published after validation. Index manifest records input coverage/config hashes, FAISS version, counts, metric, threads, reconstruction checks, duration and file identity. The read/write/hash/verification duration is not query latency. Exact vector search is a reference for later ANN approximation, not a relevance oracle. Query encoding, full validation retrieval and relevance scoring remain separate steps.
+
+## Validation query embeddings
+
+scripts/encode_validation_queries.py encodes only the frozen validation.queries.tsv in its source order, using query prefixes and pinned offline E5 in FP32 with the passage-compatible masked mean/L2/512token settings. It checks query checksum, count and uniqueness, compares model/dimension/length settings with the passage configuration, and validates vector shape, finite values and unit norms. It reads no judgment or final query file.
+
+Output artifacts/queries/e5-validation-fp32 contains vectors.npy, query_ids.json and manifest.json with split/query/passages configuration hashes, encoder identity and output checksums. Existing output is refused; publication is staged. Actual GPU execution is pending. Query encoding is separate from CPU exact FAISS search to avoid holding GPU resources while scanning the corpus.
+
+## Exact dense validation retrieval
+
+Validation query encoding completed on HPC in job 23302557 (exit 0:0,
+68 seconds elapsed). The manifest records 2,000 FP32, L2-normalized vectors
+of dimension 384, the pinned E5 revision, `query: ` prefixes and the same
+passage configuration identity as the full-corpus index. Neither judgments
+nor final queries were read by the encoder. Vector file SHA-256:
+`31683ad67542ae846fc5bd3e14b5ebb5987ca0bfc38fae35396ffea497aab51d`.
+
+The exact search runner is `scripts/retrieve_dense.py`. It verifies the
+saved FAISS index and query files, checks configuration compatibility and
+ordered query IDs against the frozen validation split, and searches all
+passages in query batches. Default settings are top 1,000, batch size 32
+and four CPU threads. Final queries remain reserved. Outputs are published
+together in `artifacts/runs/e5-exact-validation-default/` only after
+retrieval, evaluation and input rechecks succeed. Existing runs are not
+overwritten; use a new run name when changing settings. Inputs must remain
+immutable throughout the run.
+
+Rankings preserve FAISS result order. Equal-score ties can vary with
+numerical kernels, so exact search means exhaustive scoring rather than
+bitwise ranking invariance. Search-call time and retrieval-loop time are
+offline measurements; neither is serving p50/p95 latency. The loop excludes
+query encoding, index loading, checksums and evaluation. Full-corpus dense
+relevance results remain pending HPC execution.

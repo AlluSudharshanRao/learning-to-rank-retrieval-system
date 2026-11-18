@@ -66,3 +66,41 @@ Batch64 provided approximately13.2% higher throughput in this comparison. These 
 Post-run comparison verified matching ordered passage IDs, finite vectors and shape10000x384. Maximum absolute component difference was3.2782554626464844e-7; minimum paired cosine was0.9999998807907104. NumPy allclose passed with atol1e-5 and rtol1e-4. Numerical agreement does not prove identical downstream nearest-neighbor rankings, especially for ties.
 
 Decision: use batch64 FP32 as the initial L40S full-corpus configuration. At the sampled throughput, a constant-rate extrapolation is roughly87minutes of encoding for8,841,823passages, excluding checkpoint/I/O/startup costs and workload variability. Full encoding requires verified resumable shards and remains pending.
+
+## Exact E5 validation baseline
+
+HPC job 23620628 completed with exit 0:0 in 14 minutes 29 seconds.
+Retrieval used the full 8,841,823-passage corpus, the pinned pretrained
+`intfloat/e5-small-v2` encoder and exact inner-product search over
+L2-normalized vectors. All 2,000 frozen validation queries had nonempty
+rankings. The same binary relevance evaluator and query population were
+used for BM25. Values below are the reported six-decimal aggregates.
+
+| Metric | BM25 (k1=0.9, b=0.4) | E5 exact |
+| --- | ---: | ---: |
+| MRR@10 | 0.161909 | 0.317547 |
+| NDCG@10 (binary) | 0.205845 | 0.381328 |
+| Recall@20 | 0.436250 | 0.707167 |
+| Recall@50 | 0.560583 | 0.828917 |
+| Recall@100 | 0.643917 | 0.879083 |
+| Recall@1000 | 0.849333 | 0.968500 |
+
+E5 scored higher on each aggregate metric in this validation comparison.
+MRR@10 increased by 0.155638 (approximately 96.1% relative), while
+Recall@1000 increased by 0.119167. These compare an existing pretrained
+encoder with the current BM25 configuration; they are not improvements
+from project-specific training. This project validation split is not the
+official MS MARCO development benchmark, and the checkpoint may have prior
+MS MARCO exposure. Statistical significance and independent evaluator
+parity have not yet been established. The final evaluation set remains
+reserved. Slurm elapsed time includes the whole job and is not query
+latency or isolated search time. Run manifest inspection is the next gate.
+
+### Independent evaluation check
+
+Both baseline reports passed a per-query and aggregate comparison against
+pytrec-eval-terrier 0.5.11 (HPC job 23625746). All six metrics matched with
+maximum per-query absolute error 0.0 across both 2,000-query runs. The
+comparison preserved saved rank order and used top-ten truncation for
+reciprocal rank. Metric correctness for these saved runs is independently
+corroborated; paired confidence intervals remain pending.

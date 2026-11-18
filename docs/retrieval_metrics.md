@@ -149,3 +149,36 @@ python -I scripts/evaluate_retrieval.py \
 The JSON report contains macro metrics, per-query scores, missing/empty counts, cutoffs, duplicate-judgment count, evaluator version, run ID, and SHA-256/byte identities for each input. Inputs are hashed before and after evaluation to detect changes; concurrent writers are unsupported. The report refuses an existing output path and is written atomically after successful validation. Input hashes identify the supplied files, but do not verify passage membership in a corpus or authenticate a model/index/split manifest. Keep those identities and the code commit in the producing run's provenance before reporting benchmark claims.
 
 Four adapter tests cover report generation and isolated-mode CLI parity, invalid ranks, conflicting/graded qrels, and failure without report publication. All 46 local project tests and Ruff passed. No official retrieval run has been scored and no reference-evaluator parity is claimed.
+
+## Independent reference evaluation
+
+`scripts/crosscheck_evaluation.py` compares saved validation reports with
+`pytrec-eval-terrier==0.5.11`. The reference package is installed with
+`--target` in `tools/reference-eval/`, which is ignored by Git. Neither the
+GPU retrieval environment nor the BM25 environment is modified. Python
+isolated mode requires the runner to add that directory explicitly.
+
+The runner independently parses the query, binary judgment and ranking TSV
+files rather than using the project's adapters. Negative ranks become
+unique reference scores, preserving the saved order without introducing
+score ties. Recall uses the full saved ranking. NDCG uses the requested
+cutoff; reciprocal rank uses only the top ten because unrestricted
+`recip_rank` is not MRR@10. Missing rankings receive zero on the full frozen
+query population. Both per-query values and macro aggregates must agree
+within absolute tolerance 1e-12. Input checksums are checked against the
+saved evaluation and again after the comparison. The validation files also
+must match the split manifest. Inputs must remain immutable during execution.
+
+Default runs are BM25 and exact E5. The output is
+`artifacts/evaluation/reference-parity-v1.json`, published only after both
+comparisons pass. Existing output is not overwritten. Run this command in
+a CPU Slurm allocation. The package import and rank-2/rank-11 cutoff sanity
+checks passed on HPC; full saved-run reference agreement remains pending.
+Agreement validates metric computation for these saved rankings, not model
+generalization, retrieval correctness, or statistical significance.
+
+The full saved-run reference comparison subsequently passed on HPC in job
+23625746: both 2,000-query runs matched every per-query metric with zero
+observed error, and aggregates passed tolerance 1e-12. This supersedes the
+pending comparison status above. The report remains a validation result for
+these saved binary rankings rather than a general correctness proof.
