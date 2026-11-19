@@ -1,0 +1,232 @@
+{
+  "hardware": {
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8592+",
+    "faiss": "1.15.1",
+    "numpy": "2.2.6"
+  },
+  "plotting_matplotlib": "3.10.8",
+  "points": [
+    {
+      "label": "exact",
+      "relevance": {
+        "mrr@10": 0.3175468253968254,
+        "ndcg@10": 0.3813278451178677,
+        "recall@100": 0.8790833333333333,
+        "recall@1000": 0.9685,
+        "recall@20": 0.7071666666666666,
+        "recall@50": 0.8289166666666666
+      },
+      "search": {
+        "batch_queries_per_second_repetitions": [
+          3.851447120723755,
+          4.2774053189331305,
+          4.1897674496821375,
+          4.34590087799484
+        ],
+        "batch_search_seconds_repetitions": [
+          519.2853328398196,
+          467.57317833486013,
+          477.35346269677393,
+          460.2037773403572
+        ],
+        "median_batch_queries_per_second": 4.233586384307634,
+        "single_query_observations": 800,
+        "single_query_p50_ms": 492.75279050925747,
+        "single_query_p95_ms": 547.978209896246,
+        "single_query_percentiles_by_repetition_ms": [
+          {
+            "p50": 531.6755725070834,
+            "p95": 559.328844252741
+          },
+          {
+            "p50": 475.0307229696773,
+            "p95": 522.2508264472708
+          },
+          {
+            "p50": 483.2865065545775,
+            "p95": 509.10161958890967
+          },
+          {
+            "p50": 489.18800556566566,
+            "p95": 509.3677967204713
+          }
+        ]
+      }
+    },
+    {
+      "label": "hnsw-ef1024",
+      "relevance": {
+        "mrr@10": 0.31089801587301585,
+        "ndcg@10": 0.37300031087468094,
+        "recall@100": 0.8633333333333334,
+        "recall@1000": 0.951,
+        "recall@20": 0.6929166666666666,
+        "recall@50": 0.8136666666666666
+      },
+      "search": {
+        "batch_queries_per_second_repetitions": [
+          838.4869264993471,
+          887.67973101331,
+          644.0851743310441,
+          967.3977702786924
+        ],
+        "batch_search_seconds_repetitions": [
+          2.3852488772245124,
+          2.253064849996008,
+          3.105179376434535,
+          2.06740191206336
+        ],
+        "median_batch_queries_per_second": 863.0833287563285,
+        "single_query_observations": 800,
+        "single_query_p50_ms": 4.439251031726599,
+        "single_query_p95_ms": 6.383914389880374,
+        "single_query_percentiles_by_repetition_ms": [
+          {
+            "p50": 4.7525615082122386,
+            "p95": 6.7212263587862235
+          },
+          {
+            "p50": 4.590180469676852,
+            "p95": 6.574978970456868
+          },
+          {
+            "p50": 4.238273948431015,
+            "p95": 6.047382886754347
+          },
+          {
+            "p50": 4.252078535500914,
+            "p95": 5.886691185878588
+          }
+        ]
+      }
+    },
+    {
+      "label": "hnsw-ef2048",
+      "relevance": {
+        "mrr@10": 0.31427162698412703,
+        "ndcg@10": 0.37711265453799564,
+        "recall@100": 0.8723333333333334,
+        "recall@1000": 0.96025,
+        "recall@20": 0.7004166666666666,
+        "recall@50": 0.8231666666666666
+      },
+      "search": {
+        "batch_queries_per_second_repetitions": [
+          383.5691125098284,
+          403.09429352745445,
+          427.30301645169186,
+          445.89593158439556
+        ],
+        "batch_search_seconds_repetitions": [
+          5.214184184209444,
+          4.961618241970427,
+          4.680519263842143,
+          4.485351532348432
+        ],
+        "median_batch_queries_per_second": 415.19865498957313,
+        "single_query_observations": 800,
+        "single_query_p50_ms": 9.22493200050667,
+        "single_query_p95_ms": 12.642729212529957,
+        "single_query_percentiles_by_repetition_ms": [
+          {
+            "p50": 10.27354906545952,
+            "p95": 13.49897476611659
+          },
+          {
+            "p50": 9.327968989964575,
+            "p95": 12.085895944619548
+          },
+          {
+            "p50": 8.92326352186501,
+            "p95": 11.966198962181805
+          },
+          {
+            "p50": 8.865181938745081,
+            "p95": 11.606913991272444
+          }
+        ]
+      }
+    },
+    {
+      "label": "hnsw-ef4096",
+      "relevance": {
+        "mrr@10": 0.31504742063492064,
+        "ndcg@10": 0.3781621184084639,
+        "recall@100": 0.8740833333333333,
+        "recall@1000": 0.9625,
+        "recall@20": 0.7021666666666666,
+        "recall@50": 0.8244166666666666
+      },
+      "search": {
+        "batch_queries_per_second_repetitions": [
+          162.52940192477786,
+          169.0710546398341,
+          185.3383416817337,
+          190.00575572295267
+        ],
+        "batch_search_seconds_repetitions": [
+          12.305465819197707,
+          11.829345976817422,
+          10.791075294255279,
+          10.525996922515333
+        ],
+        "median_batch_queries_per_second": 177.2046981607839,
+        "single_query_observations": 800,
+        "single_query_p50_ms": 20.304361474700272,
+        "single_query_p95_ms": 27.224447234766554,
+        "single_query_percentiles_by_repetition_ms": [
+          {
+            "p50": 22.225383494514972,
+            "p95": 27.274141978705302
+          },
+          {
+            "p50": 22.897778544574976,
+            "p95": 30.577508476562794
+          },
+          {
+            "p50": 18.895600514952093,
+            "p95": 23.683960660127923
+          },
+          {
+            "p50": 18.44129350502044,
+            "p95": 22.4926209601108
+          }
+        ]
+      }
+    }
+  ],
+  "protocol": {
+    "batch_queries": 2000,
+    "batch_size": 32,
+    "k": 1000,
+    "latency_unique_queries": 200,
+    "repeats": 4,
+    "seed": 2026,
+    "threads": 4
+  },
+  "provenance": {
+    "benchmark_sha256": "d5779bfb0dbff8d58e63d51dd92cd1e6507798fbf207b4fec9bcfdeb5bac91c3",
+    "quality": {
+      "exact": {
+        "evaluation_sha256": "2efcf0f24bf87ff5a4f5e491263b9ffb6299fde2c785b9ab12e5ca63895b4f48",
+        "manifest_sha256": "e64450ac26cb7b17609a29f84079ef724b0fea620290e50daabe0b8cccdeed94"
+      },
+      "hnsw-ef1024": {
+        "evaluation_sha256": "3cfb655f925626184464ee912e0c59197576c67818b0dba2bab06c240f492476",
+        "manifest_sha256": "c56239d78dea3d881333df79209a9f8a8160724c85c997759a07bc2335eb0a53"
+      },
+      "hnsw-ef2048": {
+        "evaluation_sha256": "1599d1b63eb68530d9625a04fab1484d91e22268cc72fd7c278544666126fe7c",
+        "manifest_sha256": "da5d7ee4c0e4d16b1715bb12f622b0bf615e2ac8412a263328564bd45b84ba64"
+      },
+      "hnsw-ef4096": {
+        "evaluation_sha256": "97b3beb68a8002b32882fcb0dcbdcb408b364a61cc0789f3450d5cffb6dbb754",
+        "manifest_sha256": "c7427c137a5aab8e91cd2d01677e84b517ed225c0655106cc6e98950883b1500"
+      }
+    }
+  },
+  "schema_version": 1,
+  "scope": "warm CPU search only; quality from separate validation runs on the same index/query artifacts",
+  "status": "source reports verified and summaries recomputed",
+  "trial_dots": "observed trials, not confidence intervals"
+}

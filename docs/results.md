@@ -104,3 +104,183 @@ maximum per-query absolute error 0.0 across both 2,000-query runs. The
 comparison preserved saved rank order and used top-ten truncation for
 reciprocal rank. Metric correctness for these saved runs is independently
 corroborated; paired confidence intervals remain pending.
+
+## HNSW one-shard pilot result
+
+HPC job 23655213 completed with exit 0:0 in 23 seconds using four CPU
+threads. The reloaded index contains 100,000 vectors at 384 dimensions,
+with M=32, efConstruction=200 and probe efSearch=64. HNSW add calls took
+12.004085 seconds; this excludes exact-reference additions, input checks,
+saving and reload verification. The serialized index is 181,620,879 bytes
+(approximately 173.21 MiB). Reported Slurm MaxRSS was 735,396 K; this is
+whole-job host memory, not the graph's isolated resident memory.
+
+Across 64 stored-vector probes, mean top-ten ID-set overlap with exact
+same-shard neighbors was 0.98125. This is a mechanics check on an easy,
+non-held-out corpus prefix and is not comparable to full-corpus judged
+Recall@10 or the 2,000-query validation metrics. Equal-score ties can
+also affect ID-set overlap. No search-speed improvement was measured.
+
+Index SHA-256:
+`1e5e08674e7f3f59a650321f68f783fa779390289cb1942c47537866c074d94e`.
+The next gate is full-corpus construction followed by real-query neighbor
+recall and relevance evaluation. Construction cost need not scale linearly
+from this pilot.
+
+## Full HNSW construction result
+
+HPC job 23657686 completed with exit 0:0 in 22 minutes 16 seconds. The
+manifest confirms 8,841,823 vectors, 384 dimensions and all 89 audited
+shards. The graph uses M=32 and efConstruction=200, built with eight CPU
+threads. It passed reload metadata checks, 89 source-vector reconstruction
+checks and direct score checks on stored-vector probes.
+
+Graph-add calls took 1,246.782375 seconds. Full build and verification took
+1,329.843163 seconds, including input checks, writes, reload, probes and
+final checksums. The index is 16,057,891,835 bytes (approximately 14.96 GiB).
+Slurm reported MaxRSS 45,422,652 K, approximately 43.3 GiB for the whole job,
+not isolated index memory. The saved efSearch=64 was used for structural
+probes and is not a validated query-serving configuration.
+
+Index SHA-256:
+`d57192396295fbb01b4dfd12893b46ce53978fc6d99fdb7d415fe4b83bd37419`.
+Real-query neighbor recall, judged quality and matched search performance
+remain pending. Build success is not evidence of retrieval speedup.
+
+## First full-corpus HNSW validation result
+
+HPC job 23729240 completed with exit 0:0 in 59 seconds. It searched the
+verified M=32, efConstruction=200 graph with efSearch=1024, batch size 32,
+four CPU threads and top 1,000 candidates for all 2,000 validation queries.
+The run manifest records 2,000,000 candidates and 2.199586 seconds inside
+FAISS search calls. This is a single offline pass without warmup or
+repetition; it excludes loading, writes, checksums, scoring and comparison.
+The exact baseline ran on another node, so no matched speedup or serving
+latency claim follows from this timing.
+
+| Metric | Exact E5 | HNSW efSearch=1024 |
+| --- | ---: | ---: |
+| MRR@10 | 0.317547 | 0.310898 |
+| Binary NDCG@10 | 0.381328 | 0.373000 |
+| Judged Recall@20 | 0.707167 | 0.692917 |
+| Judged Recall@50 | 0.828917 | 0.813667 |
+| Judged Recall@100 | 0.879083 | 0.863333 |
+| Judged Recall@1000 | 0.968500 | 0.951000 |
+
+Mean exact-neighbor ID-set recall was 0.9755 at 10, 0.9687 at 100 and
+0.9153245 at 1,000. This metric measures agreement with saved exact
+neighbors, not relevance. Equal-score alternatives may reduce ID overlap.
+Final evaluation queries were not read. The observed relevance loss
+motivates a higher-efSearch run; optimal search settings and confidence
+intervals remain unestablished.
+
+Evaluation SHA-256:
+`3cfb655f925626184464ee912e0c59197576c67818b0dba2bab06c240f492476`.
+
+## HNSW efSearch=2048 validation result
+
+Job 23729437 completed with exit 0:0 in 56 seconds. It reused the same
+full graph, frozen queries, batch size 32, four CPU threads and top-1,000
+depth. Graph, query and exact-run manifest hashes match the ef1024 run.
+
+| Metric | efSearch=1024 | efSearch=2048 | Exact E5 |
+| --- | ---: | ---: | ---: |
+| MRR@10 | 0.310898 | 0.314272 | 0.317547 |
+| Binary NDCG@10 | 0.373000 | 0.377113 | 0.381328 |
+| Judged Recall@20 | 0.692917 | 0.700417 | 0.707167 |
+| Judged Recall@50 | 0.813667 | 0.823167 | 0.828917 |
+| Judged Recall@100 | 0.863333 | 0.872333 | 0.879083 |
+| Judged Recall@1000 | 0.951000 | 0.960250 | 0.968500 |
+| Neighbor recall@10 | 0.975500 | 0.986000 | 1.0 by definition |
+| Neighbor recall@100 | 0.968700 | 0.980865 | 1.0 by definition |
+| Neighbor recall@1000 | 0.915325 | 0.957371 | 1.0 by definition |
+
+All reported relevance and neighbor aggregates improved at ef2048. The
+observed search-call time was 4.781392 seconds, compared with 2.199586 at
+ef1024. These single passes ran on different nodes (cs623 versus cs624);
+they are observations, not a controlled timing ratio. Job duration was
+shorter despite more search-call time, illustrating why complete Slurm
+runtime must not substitute for isolated search timing. Final queries were
+not read. A third quality setting, ef4096, precedes matched benchmarking.
+
+## HNSW efSearch=4096 validation result
+
+Job 23729642 completed with exit 0:0 in 66 seconds, using the same graph,
+query vectors, batch size 32 and four CPU threads as the earlier settings.
+All input manifest identities remained consistent. Final queries were not
+read. The single-pass FAISS search-call total was 17.768442 seconds.
+
+| Metric | ef1024 | ef2048 | ef4096 | Exact E5 |
+| --- | ---: | ---: | ---: | ---: |
+| MRR@10 | 0.310898 | 0.314272 | 0.315047 | 0.317547 |
+| Binary NDCG@10 | 0.373000 | 0.377113 | 0.378162 | 0.381328 |
+| Judged Recall@20 | 0.692917 | 0.700417 | 0.702167 | 0.707167 |
+| Judged Recall@50 | 0.813667 | 0.823167 | 0.824417 | 0.828917 |
+| Judged Recall@100 | 0.863333 | 0.872333 | 0.874083 | 0.879083 |
+| Judged Recall@1000 | 0.951000 | 0.960250 | 0.962500 | 0.968500 |
+| Neighbor recall@10 | 0.975500 | 0.986000 | 0.990150 | 1.0 by definition |
+| Neighbor recall@100 | 0.968700 | 0.980865 | 0.986745 | 1.0 by definition |
+| Neighbor recall@1000 | 0.915325 | 0.957371 | 0.976986 | 1.0 by definition |
+
+Increasing efSearch from 2048 to 4096 improved judged Recall@1000 by
+0.00225 and MRR@10 by approximately 0.000776. Neighbor recall@1000
+increased by 0.019615. These are observed validation aggregates rather
+than statistically established gains. Quality improvements were smaller
+than the preceding ef1024-to-2048 step.
+
+The ef2048 and ef4096 runs report the same hostname but ran in separate
+allocations without warmup or repetitions; the timing comparison is still
+uncontrolled. Do not derive serving percentiles by dividing batch time by
+query count. The next systems gate is a same-node benchmark covering both
+exact and HNSW indexes, common query orders, explicit warmup and repeated
+trials. Single-query search-call latency must be labeled separately from
+batch throughput and from complete serving latency. No final efSearch
+selection or matched speedup claim has been made.
+
+
+## Matched CPU search benchmark completed
+
+HPC job 23730406 completed with exit 0:0 in 42 minutes 50 seconds on
+cs661.hpc.nyu.edu. Exact and HNSW ran in the same process on the same node
+with four CPU threads, top 1,000 candidates, explicit warmup and four
+rotating-order repetitions. Batch size was 32 over 2,000 queries. The
+single-query workload used the same fixed 200-query sample across four
+repetitions (800 repeated observations per algorithm). Quality columns
+below come from the separate frozen-validation relevance runs over the
+same graph/query artifacts; this benchmark does not read judgments.
+
+| Configuration | Median batch QPS | Search p50 ms | Search p95 ms | MRR@10 | Judged Recall@1000 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Exact | 4.234 | 492.753 | 547.978 | 0.317547 | 0.968500 |
+| HNSW ef1024 | 863.083 | 4.439 | 6.384 | 0.310898 | 0.951000 |
+| HNSW ef2048 | 415.199 | 9.225 | 12.643 | 0.314272 | 0.960250 |
+| HNSW ef4096 | 177.205 | 20.304 | 27.224 | 0.315047 | 0.962500 |
+
+Observed ratios relative to exact search in this benchmark:
+
+- HNSW ef1024: 203.87x median batch throughput; 85.84x lower search p95.
+- HNSW ef2048: 98.07x median batch throughput; 43.34x lower search p95.
+- HNSW ef4096: 41.86x median batch throughput; 20.13x lower search p95.
+
+These are warm FAISS search-call measurements, not full-service throughput
+or latency. Query preparation, encoding, network, queueing, document
+fetching and reranking are excluded. Both indexes remain resident. Process
+peak RSS/Slurm MaxRSS is whole-job memory, not an isolated comparison of
+index residency. The node was not reserved exclusively. Pooled latency
+observations repeat the same query sample and are not independent users.
+Four repetitions describe this allocation; no cross-node or multi-seed
+performance generalization is established.
+
+Exact batch search seconds were 519.285333, 467.573178, 477.353463 and
+460.203777. HNSW ef1024 seconds were 2.385249, 2.253065, 3.105179 and
+2.067402; ef2048 seconds were 5.214184, 4.961618, 4.680519 and 4.485352;
+ef4096 seconds were 12.305466, 11.829346, 10.791075 and 10.525997.
+The full raw report is needed for per-repetition percentile inspection
+and reproducible graphs.
+
+Working candidate: ef2048 offers a useful measured quality/cost balance.
+Its judged Recall@1000 is 0.00825 below exact (0.825 percentage points),
+retaining approximately 99.15% of the exact recall value. This is a relative
+comparison of macro metrics, not a per-query success guarantee. The final
+configuration decision remains subject to reviewing raw results and the
+downstream reranking candidate budget. No final-set result is reported.

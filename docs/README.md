@@ -17,3 +17,9 @@ Update code, public usage instructions, and validation evidence together. Keep i
 Public documentation must be self-contained. Exclude local notes, authentication codes, and access tokens.
 
 Publish experiment results with their configurations and source artifacts. Add dataset and model documentation alongside the corresponding pipelines.
+
+- [ANN indexing experiments](ann.md): HNSW pilot, parameters and benchmark controls.
+
+- [Matched CPU search benchmark](search_benchmark.md): repeated throughput and search-only latency protocol.
+
+- [Benchmark figures](benchmark_figures.md): verified data, trial variation, plots and reproduction.

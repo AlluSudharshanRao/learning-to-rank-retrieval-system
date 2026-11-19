@@ -1,6 +1,6 @@
 # Architecture
 
-The implemented path covers pinned checkpoint loading, GPU encoding, and exact CPU vector search. Training, corpus ingestion, ANN, reranking, hybrid retrieval, and serving remain planned. Current correctness checks are recorded in [Validation](validation.md).
+The implemented offline path covers corpus ingestion, frozen query splits, pinned E5 encoding, audited full-corpus embeddings, Lucene BM25, exact FAISS search and HNSW. Validation quality and repeated CPU search benchmarks are measured. Training, neural reranking, hybrid fusion and serving remain planned. Current correctness checks are recorded in [Validation](validation.md).
 
 The [system design diagrams](design.md) show the implemented data path, planned online pipeline, training flow, and execution boundaries.
 

@@ -220,3 +220,97 @@ tolerance. Query and judgment checksums matched across runs; final queries
 were not read. This confirms agreement for metric computation on these
 saved rankings. It does not establish statistical significance, retrieval
 implementation correctness, or generalization.
+
+## ANN construction pilot
+
+CI for commit 2b01306 passed, as confirmed by the user. Added a first-shard
+HNSW construction pilot with audited input checks, retained external IDs,
+reload/reconstruction checks and exact-score validation on stored-vector
+probes. The pilot is not a full-corpus relevance evaluation. HPC execution,
+full-corpus HNSW indexing and matched search benchmarks remain pending.
+
+## HNSW pilot completed on HPC
+
+Job 23655213 passed in 23 seconds (exit 0:0). Manifest confirms 100,000
+vectors, 384 dimensions, M=32, efConstruction=200, successful reload and
+ID reconstruction/score checks. Graph add calls took 12.004085 seconds;
+index bytes were 181,620,879. Sixty-four stored-vector probes at efSearch=64
+had mean exact top-ten neighbor overlap 0.98125. This validates the pilot
+mechanics, not held-out relevance, full-corpus ANN quality or search latency.
+
+## Full-corpus HNSW builder implementation
+
+Added a separate full-corpus HNSW builder using audited source shards,
+small add batches, checksum rechecks, staged publication and reload/ID/score
+checks. Synthetic tests cover multiple shards with noncontiguous external
+IDs, tampering in a later shard without publication, and coverage count
+mismatch. Full-corpus construction and real-query ANN evaluation are pending.
+
+## Full HNSW construction passed
+
+Job 23657686 completed with exit 0:0 in 22 minutes 16 seconds. Manifest
+confirms all 8,841,823 vectors in 89 shards with M=32, efConstruction=200
+and eight threads. Reload and 89 reconstruction checks passed; index size
+is 16,057,891,835 bytes. Added a validation retrieval runner with exact-run
+identity binding, judged relevance scoring and per-query neighbor overlap.
+Real-query HNSW execution remains pending.
+
+## HNSW efSearch=1024 validation completed
+
+Job 23729240 passed in 59 seconds, exit 0:0. All 2,000 validation queries
+returned 1,000 candidates. Judged MRR@10 was 0.31089801587301585 and
+Recall@1000 was 0.951. Exact-neighbor recall at 10/100/1000 was
+0.9755/0.9687/0.9153245. Search-call time was 2.1995858828304335 seconds
+for one offline pass. No matched speedup or serving percentile is claimed.
+The next controlled quality run increases efSearch to 2048 without
+changing the graph, query population, batch size or thread count.
+
+## HNSW efSearch=2048 validation completed
+
+Job 23729437 passed in 56 seconds with exit 0:0. Manifest identities match
+the ef1024 run. MRR@10 was 0.31427162698412703; judged Recall@1000 was
+0.96025. Neighbor recall at 10/100/1000 was 0.986/0.980865/0.9573705.
+Search calls took 4.781392026809044 seconds. Both quality measures improved,
+but separate hosts and single passes preclude a controlled timing ratio.
+Next quality setting is ef4096 with graph, queries, batch and threads fixed.
+
+## HNSW efSearch=4096 validation completed
+
+Job 23729642 passed in 66 seconds, exit 0:0. MRR@10 was
+0.31504742063492064; judged Recall@1000 was 0.9625. Exact-neighbor recall
+at 10/100/1000 was 0.99015/0.986745/0.9769855. Single-pass search calls
+took 17.768442114815116 seconds. All three HNSW settings have measured
+real-query relevance and exact-neighbor overlap. Matched performance
+benchmarking remains pending; no measured serving latency exists yet.
+
+## Matched search benchmark implementation
+
+Downloaded all five quality-run reports and verified each evaluation JSON
+against its run manifest hash locally. Added a matched CPU benchmark for
+exact plus HNSW ef1024/2048/4096: four repetitions, common query orders,
+rotating algorithm order, explicit warmup, full validation batch throughput
+and actual single-query timing on a fixed 200-query sample. Raw timings,
+per-repetition summaries and scope metadata are retained. Synthetic tests
+cover scheduling, timer/result handling, percentile math, real small-index
+execution and tampered query rejection. Full HPC benchmarking is pending.
+
+## Matched benchmark passed on HPC
+
+Job 23730406 completed in 42 minutes 50 seconds with exit 0:0. All four
+algorithms completed four repetitions on cs661 with four CPU threads.
+Median batch QPS was 4.233586 exact, 863.083329 ef1024, 415.198655 ef2048
+and 177.204698 ef4096. Pooled single-query search p95 was 547.978210,
+6.383914, 12.642729 and 27.224447 ms respectively. Results include actual
+single-query measurements, not amortized batch times. Raw report transfer,
+per-repetition inspection and graph generation remain pending.
+
+## Verified benchmark plots
+
+Downloaded the raw report for job 23730406. Verified four trials and 800
+single-query observations per algorithm, matching query orders, compatible
+index/query identities across quality and benchmark reports, and timing
+summaries recomputed from raw samples. Added a plotting command with four
+source-validation tests. All 105 local tests and Ruff checks passed.
+Generated and visually inspected three PNG/SVG figure pairs plus portable
+JSON/CSV summaries. README and architecture status now reflect the measured
+offline pipeline. Latest ANN/reporting changes have not yet run in CI.

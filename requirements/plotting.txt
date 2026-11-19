@@ -1,0 +1,2 @@
+# Optional local reporting dependencies; not required on HPC compute nodes.
+matplotlib==3.10.8
